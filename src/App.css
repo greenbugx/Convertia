@@ -52,11 +52,6 @@ body,
   background-color: #ececed;
 }
 
-.app-shell.is-resizing {
-  user-select: none;
-  cursor: col-resize;
-}
-
 .curved-frame {
   flex: 1;
   width: 100%;
@@ -85,10 +80,6 @@ body,
   transition: width 0.22s cubic-bezier(0.2, 0, 0, 1);
   box-sizing: border-box;
   z-index: 10;
-}
-
-.curved-sidebar.dragging {
-  transition: none; 
 }
 
 .sidebar-header {
@@ -187,11 +178,29 @@ body,
   overflow-x: hidden;
   padding: 8px 12px;
   width: 100%;
-  min-width: 216px;
   box-sizing: border-box;
 }
 
+.sidebar-content-inner {
+  width: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.curved-sidebar.collapsed .sidebar-content {
+  position: absolute;
+  top: 54px;
+  left: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .curved-sidebar.extended .sidebar-content {
+  position: relative;
+  visibility: visible;
   animation: sidebarContentFade 0.22s ease forwards;
 }
 
@@ -225,6 +234,14 @@ body,
 
 .curved-sidebar.collapsed {
   overflow: visible;
+}
+
+.curved-sidebar.collapsed .sidebar-collapsed-content {
+  display: flex;
+}
+
+.curved-sidebar.extended .sidebar-collapsed-content {
+  display: none;
 }
 
 /* Unextended sidebar content & buttons */
@@ -273,7 +290,7 @@ body,
   position: absolute;
   left: calc(100% + 14px);
   top: -6px;
-  width: 230px;
+  width: max-content;
   border: 2px solid #000000;
   border-radius: 16px;
   background-color: #ffffff;
@@ -309,8 +326,7 @@ body,
   flex-direction: column;
   gap: 10px;
   box-sizing: border-box;
-  width: 100%;
-  min-width: 212px;
+  width: max-content;
   flex-shrink: 0;
 }
 
@@ -376,22 +392,6 @@ body,
 .bidirectional-arrow {
   flex-shrink: 0;
   stroke: currentColor;
-}
-
-.sidebar-resizer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 6px;
-  height: 100%;
-  cursor: col-resize;
-  z-index: 10;
-  transition: background-color 0.15s ease;
-}
-
-.sidebar-resizer:hover,
-.curved-sidebar.dragging .sidebar-resizer {
-  background-color: rgba(0, 0, 0, 0.15);
 }
 
 /* Main Viewport Area */

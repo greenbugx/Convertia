@@ -1,53 +1,37 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
 function App() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(240);
-  const [isDragging, setIsDragging] = useState(false);
+  const [extendedWidth, setExtendedWidth] = useState<number | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   const [isToolsPopoverOpen, setIsToolsPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const startResizing = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const resize = useCallback(
-    (e: MouseEvent) => {
-      if (isDragging && sidebarRef.current) {
-        const parentLeft = sidebarRef.current.parentElement?.getBoundingClientRect().left ?? 0;
-        const newWidth = e.clientX - parentLeft - 12;
-        if (newWidth >= 160 && newWidth <= 380) {
-          setSidebarWidth(newWidth);
-          if (isCollapsed) {
-            setIsCollapsed(false);
-            setIsToolsPopoverOpen(false);
-          }
-        } else if (newWidth < 100) {
-          setIsCollapsed(true);
+  useEffect(() => {
+    function measure() {
+      if (innerRef.current) {
+        const rect = innerRef.current.getBoundingClientRect();
+        const measured = rect.width || innerRef.current.offsetWidth || innerRef.current.scrollWidth;
+        if (measured > 0) {
+          const contentWidth = Math.ceil(measured) + 28;
+          const minHeaderWidth = 190;
+          setExtendedWidth(Math.max(contentWidth, minHeaderWidth));
         }
       }
-    },
-    [isDragging, isCollapsed]
-  );
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener("mousemove", resize);
-      window.addEventListener("mouseup", stopResizing);
     }
-    return () => {
-      window.removeEventListener("mousemove", resize);
-      window.removeEventListener("mouseup", stopResizing);
-    };
-  }, [isDragging, resize, stopResizing]);
+
+    measure();
+    if (document.fonts) {
+      document.fonts.ready.then(measure);
+    }
+    if (!innerRef.current) return;
+    const observer = new ResizeObserver(() => measure());
+    observer.observe(innerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -64,7 +48,7 @@ function App() {
   }, [isToolsPopoverOpen]);
 
   return (
-    <div className={`app-shell ${isDragging ? "is-resizing" : ""}`}>
+    <div className="app-shell">
       <div className="curved-frame">
         <header className="frame-header">
           <img src="/logo.svg" alt="Logo" className="frame-logo" />
@@ -103,8 +87,8 @@ function App() {
         {/* Extendible Left Sidebar */}
         <aside
           ref={sidebarRef}
-          className={`curved-sidebar ${isCollapsed ? "collapsed" : "extended"} ${isDragging ? "dragging" : ""}`}
-          style={{ width: isCollapsed ? 58 : sidebarWidth }}
+          className={`curved-sidebar ${isCollapsed ? "collapsed" : "extended"}`}
+          style={{ width: isCollapsed ? 58 : (extendedWidth ?? "max-content") }}
         >
           <div className="sidebar-header">
             {!isCollapsed && <span className="sidebar-title">Menu</span>}
@@ -159,78 +143,80 @@ function App() {
             </button>
           </div>
 
-          {isCollapsed ? (
-            <div className="sidebar-collapsed-content">
-              <div className="rail-btn-wrapper" ref={popoverRef}>
-                <button
-                  className={`sidebar-rail-btn ${isToolsPopoverOpen ? "active" : ""}`}
-                  onClick={() => setIsToolsPopoverOpen((prev) => !prev)}
-                  title="Convertion Tools"
-                  aria-label="Convertion Tools"
+          {/* Unextended Collapsed Rail */}
+          <div className="sidebar-collapsed-content">
+            <div className="rail-btn-wrapper" ref={popoverRef}>
+              <button
+                className={`sidebar-rail-btn ${isToolsPopoverOpen ? "active" : ""}`}
+                onClick={() => setIsToolsPopoverOpen((prev) => !prev)}
+                title="Convertion Tools"
+                aria-label="Convertion Tools"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="17 1 21 5 17 9" />
-                    <path d="M3 5h18" />
-                    <polyline points="7 23 3 19 7 15" />
-                    <path d="M21 19H3" />
-                  </svg>
-                </button>
+                  <polyline points="17 1 21 5 17 9" />
+                  <path d="M3 5h18" />
+                  <polyline points="7 23 3 19 7 15" />
+                  <path d="M21 19H3" />
+                </svg>
+              </button>
 
-                {isToolsPopoverOpen && (
-                  <div className="rail-popover-box">
-                    <h3 className="tools-box-heading">Convertion Tools</h3>
-                    <button className="tool-item" type="button">
+              {isToolsPopoverOpen && (
+                <div className="rail-popover-box">
+                  <h3 className="tools-box-heading">Convertion Tools</h3>
+                  <button className="tool-item" type="button">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="tool-icon"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span className="tool-label">
+                      <span>Image</span>
                       <svg
-                        width="18"
-                        height="18"
+                        width="14"
+                        height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="tool-icon"
+                        className="bidirectional-arrow"
+                        aria-hidden="true"
                       >
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
+                        <line x1="4" y1="12" x2="20" y2="12" />
+                        <polyline points="8 8 4 12 8 16" />
+                        <polyline points="16 8 20 12 16 16" />
                       </svg>
-                      <span className="tool-label">
-                        <span>Image</span>
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="bidirectional-arrow"
-                          aria-hidden="true"
-                        >
-                          <line x1="4" y1="12" x2="20" y2="12" />
-                          <polyline points="8 8 4 12 8 16" />
-                          <polyline points="16 8 20 12 16 16" />
-                        </svg>
-                        <span>Image</span>
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                      <span>Image</span>
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="sidebar-content">
+          </div>
+
+          {/* Extended Content */}
+          <div className="sidebar-content">
+            <div className="sidebar-content-inner" ref={innerRef}>
               <div className="tools-box">
                 <h3 className="tools-box-heading">Convertion Tools</h3>
                 <button className="tool-item" type="button">
@@ -272,14 +258,7 @@ function App() {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Right edge drag handle for extending */}
-          <div
-            className="sidebar-resizer"
-            onMouseDown={startResizing}
-            title="Drag to extend or resize sidebar"
-          />
+          </div>
         </aside>
 
         {/* Main Content Area */}
