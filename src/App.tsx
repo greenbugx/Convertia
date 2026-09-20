@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
+import ImageConverter from "./ImageConverter";
+import logoSvg from "./assets/logo.svg";
+import convertiaSvg from "./assets/convertia.svg";
 
 function App() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeView, setActiveView] = useState<"home" | "image-to-image">("home");
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [extendedWidth, setExtendedWidth] = useState<number | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -51,38 +55,67 @@ function App() {
     <div className="app-shell">
       <div className="curved-frame">
         <header className="frame-header">
-          <img src="/logo.svg" alt="Logo" className="frame-logo" />
+          <img src={logoSvg} alt="Convertia Logo" className="frame-logo" />
         </header>
 
-        <div className="locked-hero">
-          <h1 className="hero-title">
-            <span>
-              C
-              <img
-                src="/convertia.svg"
-                alt="o"
-                className="inline-convertia-o"
-              />
-              nvert
-            </span>{" "}
-            what you{" "}
-            <span>
-              l
-              <span className="heart-o-wrapper">
-                o
-                <svg
-                  className="floating-heart"
-                  viewBox="0 0 24 24"
-                  fill="#fa2726"
-                  aria-hidden="true"
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
+        {activeView !== "home" && (
+          <button
+            type="button"
+            className="top-home-arrow-btn"
+            style={{
+              left: isCollapsed ? 82 : (extendedWidth ? extendedWidth + 24 : 244),
+            }}
+            onClick={() => setActiveView("home")}
+            title="Home"
+            aria-label="Back to Home"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        )}
+
+        {activeView === "home" && (
+          <div className="locked-hero">
+            <h1 className="hero-title">
+              <span>
+                C
+                <img
+                  src={convertiaSvg}
+                  alt="o"
+                  className="inline-convertia-o"
+                />
+                nvert
+              </span>{" "}
+              what you{" "}
+              <span>
+                l
+                <span className="heart-o-wrapper">
+                  o
+                  <svg
+                    className="floating-heart"
+                    viewBox="0 0 24 24"
+                    fill="#fa2726"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                </span>
+                ve
               </span>
-              ve
-            </span>
-          </h1>
-        </div>
+            </h1>
+          </div>
+        )}
 
         {/* Extendible Left Sidebar */}
         <aside
@@ -104,7 +137,7 @@ function App() {
               {isCollapsed ? (
                 <div className="toggle-icon-swap">
                   <img
-                    src="/convertia.svg"
+                    src={convertiaSvg}
                     alt="Convertia"
                     className="convertia-icon"
                   />
@@ -172,7 +205,14 @@ function App() {
               {isToolsPopoverOpen && (
                 <div className="rail-popover-box">
                   <h3 className="tools-box-heading">Convertion Tools</h3>
-                  <button className="tool-item" type="button">
+                  <button
+                    className={`tool-item ${activeView === "image-to-image" ? "active" : ""}`}
+                    type="button"
+                    onClick={() => {
+                      setActiveView("image-to-image");
+                      setIsToolsPopoverOpen(false);
+                    }}
+                  >
                     <svg
                       width="18"
                       height="18"
@@ -219,7 +259,13 @@ function App() {
             <div className="sidebar-content-inner" ref={innerRef}>
               <div className="tools-box">
                 <h3 className="tools-box-heading">Convertion Tools</h3>
-                <button className="tool-item" type="button">
+                <button
+                  className={`tool-item ${activeView === "image-to-image" ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setActiveView("image-to-image");
+                  }}
+                >
                   <svg
                     width="18"
                     height="18"
@@ -262,7 +308,8 @@ function App() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="main-viewport">
+        <main className={`main-viewport view-${activeView}`}>
+          {activeView === "image-to-image" && <ImageConverter />}
         </main>
       </div>
     </div>
