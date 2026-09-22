@@ -39,6 +39,9 @@ pub struct TransformOptions {
 pub struct EncodeOptions {
     pub jpeg_quality: Option<u8>,
     pub png_compression: Option<PngCompression>,
+    pub webp_quality: Option<u8>,
+    pub avif_quality: Option<u8>,
+    pub avif_speed: Option<u8>,
 }
 
 #[derive(Debug, Clone, Default)]

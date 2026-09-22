@@ -17,8 +17,8 @@ use super::formats::ImageFormat;
 use super::options::{EncodeOptions, PngCompression};
 
 const DEFAULT_JPEG_QUALITY: u8 = 85;
-const AVIF_SPEED: u8 = 6;
-const AVIF_QUALITY: u8 = 80;
+const DEFAULT_AVIF_QUALITY: u8 = 85;
+const DEFAULT_AVIF_SPEED: u8 = 6;
 const MAX_ICO_DIMENSION: u32 = 256;
 
 pub fn encode_to_path(
@@ -68,8 +68,8 @@ fn encode_to_writer<W: Write + Seek>(
     match format {
         ImageFormat::Jpeg => encode_jpeg(image, &mut writer, options),
         ImageFormat::Png => encode_png(image, &mut writer, options),
-        ImageFormat::Webp => encode_webp(image, &mut writer),
-        ImageFormat::Avif => encode_avif(image, &mut writer),
+        ImageFormat::Webp => encode_webp(image, &mut writer, options),
+        ImageFormat::Avif => encode_avif(image, &mut writer, options),
         ImageFormat::Tiff => image
             .write_with_encoder(TiffEncoder::new(&mut writer))
             .map_err(encode_failed),
@@ -121,19 +121,67 @@ fn encode_png<W: Write + Seek>(
 fn encode_webp<W: Write + Seek>(
     image: &DynamicImage,
     writer: &mut W,
+    options: &EncodeOptions,
+) -> Result<(), ConversionError> {
+    match options.webp_quality {
+        Some(quality) => {
+            if !(1..=100).contains(&quality) {
+                return Err(ConversionError::InvalidOptions(format!(
+                    "WebP quality must be between 1 and 100, got {quality}"
+                )));
+            }
+            encode_webp_lossy(image, writer, quality)
+        }
+        None => {
+            let image = ensure_8bit(image);
+            image
+                .write_with_encoder(WebPEncoder::new_lossless(writer))
+                .map_err(encode_failed)
+        }
+    }
+}
+
+fn encode_webp_lossy<W: Write + Seek>(
+    image: &DynamicImage,
+    writer: &mut W,
+    quality: u8,
 ) -> Result<(), ConversionError> {
     let image = ensure_8bit(image);
-    image
-        .write_with_encoder(WebPEncoder::new_lossless(writer))
-        .map_err(encode_failed)
+    let encoded = if image.color().has_alpha() {
+        let rgba = image.to_rgba8();
+        webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+            .encode_simple(false, f32::from(quality))
+    } else {
+        let rgb = image.to_rgb8();
+        webp::Encoder::from_rgb(rgb.as_raw(), rgb.width(), rgb.height())
+            .encode_simple(false, f32::from(quality))
+    };
+    let encoded = encoded
+        .map_err(|e| ConversionError::EncodeFailed(format!("lossy WebP encoding failed: {e:?}")))?;
+    writer
+        .write_all(&encoded)
+        .map_err(|e| ConversionError::EncodeFailed(format!("could not write WebP data: {e}")))
 }
 
 fn encode_avif<W: Write + Seek>(
     image: &DynamicImage,
     writer: &mut W,
+    options: &EncodeOptions,
 ) -> Result<(), ConversionError> {
+    let quality = options.avif_quality.unwrap_or(DEFAULT_AVIF_QUALITY);
+    if !(1..=100).contains(&quality) {
+        return Err(ConversionError::InvalidOptions(format!(
+            "AVIF quality must be between 1 and 100, got {quality}"
+        )));
+    }
+    let speed = options.avif_speed.unwrap_or(DEFAULT_AVIF_SPEED);
+    if !(1..=10).contains(&speed) {
+        return Err(ConversionError::InvalidOptions(format!(
+            "AVIF speed must be between 1 and 10, got {speed}"
+        )));
+    }
     let image = ensure_integer_samples(image);
-    let encoder = AvifEncoder::new_with_speed_quality(writer, AVIF_SPEED, AVIF_QUALITY);
+    let encoder = AvifEncoder::new_with_speed_quality(writer, speed, quality);
     image.write_with_encoder(encoder).map_err(encode_failed)
 }
 

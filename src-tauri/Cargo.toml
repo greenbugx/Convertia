@@ -32,6 +32,7 @@ image = { version = "0.25.10", default-features = false, features = [
     "ico",
     "bmp",
 ] }
+webp = { version = "0.3.1", default-features = false }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

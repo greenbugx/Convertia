@@ -35,6 +35,15 @@ export async function convertImages(
         ...(request.pngCompression !== undefined
           ? { pngCompression: request.pngCompression }
           : {}),
+        ...(request.webpQuality !== undefined
+          ? { webpQuality: request.webpQuality }
+          : {}),
+        ...(request.avifQuality !== undefined
+          ? { avifQuality: request.avifQuality }
+          : {}),
+        ...(request.avifSpeed !== undefined
+          ? { avifSpeed: request.avifSpeed }
+          : {}),
       },
     });
 

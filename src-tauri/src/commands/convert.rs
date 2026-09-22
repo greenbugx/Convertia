@@ -24,6 +24,9 @@ pub struct ConvertImagesRequest {
     pub target_format: ImageFormat,
     pub jpeg_quality: Option<u8>,
     pub png_compression: Option<PngCompression>,
+    pub webp_quality: Option<u8>,
+    pub avif_quality: Option<u8>,
+    pub avif_speed: Option<u8>,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,6 +78,9 @@ pub fn convert_batch(
     let encode = EncodeOptions {
         jpeg_quality: request.jpeg_quality,
         png_compression: request.png_compression,
+        webp_quality: request.webp_quality,
+        avif_quality: request.avif_quality,
+        avif_speed: request.avif_speed,
     };
     let mut results = Vec::with_capacity(request.images.len());
     for source in &request.images {
