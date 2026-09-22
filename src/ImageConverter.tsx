@@ -59,6 +59,9 @@ export interface ConversionRequest {
   targetFormat: SupportedFormat;
   jpegQuality?: number;
   pngCompression?: "Fast" | "Balanced" | "Maximum";
+  webpQuality?: number;
+  avifQuality?: number;
+  avifSpeed?: number;
 }
 
 interface ImageConverterProps {
@@ -75,6 +78,9 @@ export default function ImageConverter({
   const [targetFormat, setTargetFormat] = useState<SupportedFormat>("png");
   const [jpegQuality, setJpegQuality] = useState(85);
   const [pngCompression, setPngCompression] = useState<"Fast" | "Balanced" | "Maximum">("Balanced");
+  const [webpQuality, setWebpQuality] = useState(85);
+  const [avifQuality, setAvifQuality] = useState(85);
+  const [avifSpeed, setAvifSpeed] = useState(6);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -250,6 +256,8 @@ export default function ImageConverter({
         targetFormat,
         ...(targetFormat === "jpeg" ? { jpegQuality } : {}),
         ...(targetFormat === "png" ? { pngCompression } : {}),
+        ...(targetFormat === "webp" ? { webpQuality } : {}),
+        ...(targetFormat === "avif" ? { avifQuality, avifSpeed } : {}),
       });
       if (error) {
         triggerError(error);
@@ -629,6 +637,98 @@ export default function ImageConverter({
                     onClick={() => setPngCompression(level)}
                   >
                     {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {targetFormat === "webp" && (
+            <div className="option-group">
+              <div className="option-group-title-row">
+                <span className="option-group-title">WebP Quality</span>
+                <span className="option-badge">{webpQuality}%</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={webpQuality}
+                  onChange={(e) => setWebpQuality(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="quality-presets-row">
+                {[60, 75, 85, 100].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`quality-chip ${webpQuality === val ? "active" : ""}`}
+                    onClick={() => setWebpQuality(val)}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {targetFormat === "avif" && (
+            <div className="option-group">
+              <div className="option-group-title-row">
+                <span className="option-group-title">AVIF Quality</span>
+                <span className="option-badge">{avifQuality}%</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={avifQuality}
+                  onChange={(e) => setAvifQuality(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="quality-presets-row">
+                {[60, 75, 85, 100].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`quality-chip ${avifQuality === val ? "active" : ""}`}
+                    onClick={() => setAvifQuality(val)}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+
+              <div className="option-subdivider" />
+
+              <div className="option-group-title-row">
+                <span className="option-group-title">AVIF Speed</span>
+                <span className="option-badge">{avifSpeed}</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={avifSpeed}
+                  onChange={(e) => setAvifSpeed(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="speed-presets-row">
+                {[1, 2, 4, 6, 8, 10].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`quality-chip ${avifSpeed === val ? "active" : ""}`}
+                    onClick={() => setAvifSpeed(val)}
+                  >
+                    {val}
                   </button>
                 ))}
               </div>

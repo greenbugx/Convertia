@@ -1211,6 +1211,18 @@ body,
   color: #ffffff;
 }
 
+.speed-presets-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.option-subdivider {
+  height: 1px;
+  background-color: #e5e5e7;
+  margin: 2px 0;
+}
+
 /* Convert Button */
 .convert-action-section {
   margin-top: auto;
