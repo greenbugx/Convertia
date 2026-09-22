@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 import convertiaSvg from "./assets/convertia.svg";
@@ -104,7 +104,7 @@ export default function ImageConverter({
           setIsDraggingOver(false);
         } else if (payload.type === "drop") {
           setIsDraggingOver(false);
-          addPaths(payload.paths);
+          void addPaths(payload.paths);
         }
       })
       .then((fn) => {
@@ -125,7 +125,7 @@ export default function ImageConverter({
     }, 6000);
   }
 
-  function addPaths(paths: string[]) {
+  async function addPaths(paths: string[]) {
     if (!paths || paths.length === 0) return;
     const supported: string[] = [];
     const unsupported: string[] = [];
@@ -147,10 +147,21 @@ export default function ImageConverter({
 
     if (supported.length === 0) return;
 
+    const grantedPaths = [
+      ...imagesRef.current.map((item) => item.path),
+      ...supported,
+    ];
+    try {
+      await invoke("set_preview_paths", { paths: grantedPaths });
+    } catch (error) {
+      triggerError(error instanceof Error ? error.message : String(error));
+      return;
+    }
+
     const newItems: ImageItem[] = [];
     supported.forEach((path) => {
       const name = fileNameOf(path);
-      const url = convertFileSrc(path);
+      const url = convertFileSrc(path, "preview");
       const id = `${path}-${Math.random().toString(36).substring(2, 9)}`;
       const item: ImageItem = {
         id,
@@ -197,15 +208,22 @@ export default function ImageConverter({
         filters: [{ name: "Images", extensions: [...VALID_EXTENSIONS] }],
       });
       if (!selected) return;
-      addPaths(Array.isArray(selected) ? selected : [selected]);
+      await addPaths(Array.isArray(selected) ? selected : [selected]);
     } catch {
       triggerError("Could not open the file picker.");
     }
   }
 
+  function syncPreviewPaths(paths: string[]) {
+    void invoke("set_preview_paths", { paths }).catch((error) => {
+      triggerError(error instanceof Error ? error.message : String(error));
+    });
+  }
+
   function removeImage(indexToRemove: number) {
     const nextImages = images.filter((_, idx) => idx !== indexToRemove);
     setImages(nextImages);
+    syncPreviewPaths(nextImages.map((item) => item.path));
 
     const nextIndex = Math.max(0, Math.min(currentIndex, nextImages.length - 1));
     setCurrentIndex(nextIndex);
@@ -214,6 +232,7 @@ export default function ImageConverter({
   function handleClearAll() {
     setImages([]);
     setCurrentIndex(0);
+    syncPreviewPaths([]);
   }
 
   function handleSetRotation(deg: number) {
@@ -354,7 +373,9 @@ export default function ImageConverter({
           {images.length === 0 ? (
             <div
               className={`dropzone-area ${isDraggingOver ? "dragging-over" : ""}`}
-              onClick={() => browseFiles()}
+              onClick={() => {
+                void browseFiles();
+              }}
             >
               <div className="dropzone-icon-circle">
                 <svg
@@ -382,7 +403,7 @@ export default function ImageConverter({
                 className="dropzone-browse-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  browseFiles();
+                  void browseFiles();
                 }}
               >
                 Browse Images
@@ -475,7 +496,9 @@ export default function ImageConverter({
                 <button
                   type="button"
                   className="add-more-pics-btn"
-                  onClick={() => browseFiles()}
+                  onClick={() => {
+                    void browseFiles();
+                  }}
                   title="Add more pictures"
                   aria-label="Add more pictures"
                 >
