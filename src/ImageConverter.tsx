@@ -57,6 +57,8 @@ interface ImageItem {
 export interface ConversionRequest {
   images: { file: File; rotation: number }[];
   targetFormat: SupportedFormat;
+  jpegQuality?: number;
+  pngCompression?: "Fast" | "Balanced" | "Maximum";
 }
 
 interface ImageConverterProps {
@@ -71,6 +73,8 @@ export default function ImageConverter({
   const [images, setImages] = useState<ImageItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [targetFormat, setTargetFormat] = useState<SupportedFormat>("png");
+  const [jpegQuality, setJpegQuality] = useState(85);
+  const [pngCompression, setPngCompression] = useState<"Fast" | "Balanced" | "Maximum">("Balanced");
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -244,6 +248,8 @@ export default function ImageConverter({
       onConvert({
         images: images.map((it) => ({ file: it.file, rotation: it.rotation })),
         targetFormat,
+        ...(targetFormat === "jpeg" ? { jpegQuality } : {}),
+        ...(targetFormat === "png" ? { pngCompression } : {}),
       });
     }
   }
@@ -574,6 +580,57 @@ export default function ImageConverter({
               ))}
             </div>
           </div>
+
+          {targetFormat === "jpeg" && (
+            <div className="option-group">
+              <div className="option-group-title-row">
+                <span className="option-group-title">JPEG Quality</span>
+                <span className="option-badge">{jpegQuality}%</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={jpegQuality}
+                  onChange={(e) => setJpegQuality(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="quality-presets-row">
+                {[60, 75, 85, 100].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`quality-chip ${jpegQuality === val ? "active" : ""}`}
+                    onClick={() => setJpegQuality(val)}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {targetFormat === "png" && (
+            <div className="option-group">
+              <div className="option-group-title-row">
+                <span className="option-group-title">PNG Compression</span>
+              </div>
+              <div className="compression-options-row">
+                {(["Fast", "Balanced", "Maximum"] as const).map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`compression-chip ${pngCompression === level ? "active" : ""}`}
+                    onClick={() => setPngCompression(level)}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Convert Button */}
           <div className="convert-action-section">

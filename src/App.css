@@ -1104,6 +1104,113 @@ body,
   white-space: nowrap;
 }
 
+.quality-slider-container {
+  display: flex;
+  align-items: center;
+  padding: 4px 2px;
+}
+
+.quality-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e4e4e7;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.quality-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #000000;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.quality-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.quality-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #000000;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.quality-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+.quality-presets-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.quality-chip {
+  padding: 5px 4px;
+  border: 1.5px solid #000000;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.quality-chip:hover {
+  background-color: #e4e4e6;
+}
+
+.quality-chip.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.compression-options-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.compression-chip {
+  padding: 8px 4px;
+  border: 1.5px solid #000000;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.compression-chip:hover {
+  background-color: #e4e4e6;
+}
+
+.compression-chip.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
 /* Convert Button */
 .convert-action-section {
   margin-top: auto;
