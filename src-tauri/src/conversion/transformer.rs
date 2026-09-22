@@ -10,7 +10,7 @@ pub fn apply(
     image: DynamicImage,
     options: &TransformOptions,
 ) -> Result<DynamicImage, ConversionError> {
-    if options.rotation % 90 != 0 {
+    if !options.rotation.is_multiple_of(90) {
         return Err(ConversionError::InvalidTransform(format!(
             "rotation must be a multiple of 90 degrees, got {}",
             options.rotation
