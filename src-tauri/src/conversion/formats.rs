@@ -76,6 +76,28 @@ impl ImageFormat {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InputFormat {
+    Raster(ImageFormat),
+    Svg,
+}
+
+impl InputFormat {
+    pub fn from_extension(extension: &str) -> Option<Self> {
+        let normalized = extension.trim_start_matches('.').to_ascii_lowercase();
+        if normalized == "svg" {
+            return Some(Self::Svg);
+        }
+        ImageFormat::from_extension(&normalized).map(Self::Raster)
+    }
+
+    pub fn from_path(path: &Path) -> Option<Self> {
+        path.extension()
+            .and_then(|ext| ext.to_str())
+            .and_then(Self::from_extension)
+    }
+}
+
 impl Serialize for ImageFormat {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(self.extension())

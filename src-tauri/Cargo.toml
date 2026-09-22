@@ -35,6 +35,7 @@ image = { version = "0.25.10", default-features = false, features = [
 webp = { version = "0.3.1", default-features = false }
 tauri-plugin-dialog = "2.7.3"
 percent-encoding = "2"
+resvg = "0.48.1"
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }

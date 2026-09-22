@@ -3,10 +3,11 @@ pub mod encoder;
 pub mod error;
 pub mod formats;
 pub mod options;
+pub mod svg;
 pub mod transformer;
 
 pub use error::ConversionError;
-pub use formats::ImageFormat;
+pub use formats::{ImageFormat, InputFormat};
 pub use options::{
     ConversionOptions, CropOptions, EncodeOptions, PngCompression, ResizeOptions, TransformOptions,
 };
@@ -29,7 +30,10 @@ pub fn convert_image(
     format: ImageFormat,
     options: &ConversionOptions,
 ) -> Result<ConvertedImage, ConversionError> {
-    let (image, _) = decoder::decode_path(input_path)?;
+    let image = match InputFormat::from_path(input_path) {
+        Some(InputFormat::Svg) => svg::decode_path(input_path, preferred_render_size(options))?,
+        _ => decoder::decode_path(input_path)?.0,
+    };
     finish(image, output_path, format, options)
 }
 
@@ -39,8 +43,23 @@ pub fn convert_bytes(
     format: ImageFormat,
     options: &ConversionOptions,
 ) -> Result<ConvertedImage, ConversionError> {
-    let (image, _) = decoder::decode_bytes(data)?;
+    let image = if svg::looks_like_svg(data) {
+        svg::decode_bytes(data, preferred_render_size(options))?
+    } else {
+        decoder::decode_bytes(data)?.0
+    };
     finish(image, output_path, format, options)
+}
+
+fn preferred_render_size(options: &ConversionOptions) -> Option<svg::RenderSize> {
+    let resize = options.transform.resize.as_ref().filter(|r| r.exact)?;
+    if options.transform.crop.is_some() {
+        return None;
+    }
+    Some(svg::RenderSize {
+        width: resize.width,
+        height: resize.height,
+    })
 }
 
 fn finish(
