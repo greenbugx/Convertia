@@ -17,13 +17,7 @@ export async function convertImages(
   request: ConversionRequest
 ): Promise<string | null> {
   try {
-    const images = await Promise.all(
-      request.images.map(async ({ file, rotation }) => ({
-        name: file.name,
-        data: new Uint8Array(await file.arrayBuffer()),
-        rotation,
-      }))
-    );
+    const images = request.images.map(({ path, rotation }) => ({ path, rotation }));
 
     const response = await invoke<ConvertImagesResponse>("convert_images", {
       request: {

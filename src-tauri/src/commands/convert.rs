@@ -11,8 +11,7 @@ use crate::conversion::{
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceImage {
-    pub name: String,
-    pub data: Vec<u8>,
+    pub path: String,
     #[serde(default)]
     pub rotation: u16,
 }
@@ -103,7 +102,13 @@ fn convert_one(
     encode: &EncodeOptions,
     output_directory: &Path,
 ) -> ImageConversionResult {
-    let stem = sanitize_stem(&source.name);
+    let input_path = Path::new(&source.path);
+    let display_name = input_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(&source.path)
+        .to_string();
+    let stem = sanitize_stem(&display_name);
     let output_path = unique_output_path(output_directory, &stem, format.extension());
     let options = ConversionOptions {
         transform: TransformOptions {
@@ -112,14 +117,14 @@ fn convert_one(
         },
         encode: encode.clone(),
     };
-    match conversion::convert_bytes(&source.data, &output_path, format, &options) {
+    match conversion::convert_image(input_path, &output_path, format, &options) {
         Ok(converted) => ImageConversionResult {
-            source_name: source.name.clone(),
+            source_name: display_name,
             output_path: Some(converted.output_path.to_string_lossy().into_owned()),
             error: None,
         },
         Err(error) => ImageConversionResult {
-            source_name: source.name.clone(),
+            source_name: display_name,
             output_path: None,
             error: Some(error.to_string()),
         },

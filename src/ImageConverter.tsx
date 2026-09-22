@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { open } from "@tauri-apps/plugin-dialog";
 import convertiaSvg from "./assets/convertia.svg";
 
 export type SupportedFormat = "jpeg" | "png" | "svg" | "webp" | "avif" | "tiff" | "ico" | "bmp";
@@ -23,39 +26,28 @@ const FORMAT_OPTIONS: FormatOption[] = [
 
 const VALID_EXTENSIONS = new Set(["jpeg", "jpg", "png", "svg", "webp", "avif", "tiff", "tif", "ico", "bmp"]);
 
-const FILE_ACCEPT_STRING = ".jpeg,.jpg,.png,.svg,.webp,.avif,.tiff,.tif,.ico,.bmp,image/jpeg,image/png,image/svg+xml,image/webp,image/avif,image/tiff,image/x-icon,image/vnd.microsoft.icon,image/bmp,image/x-ms-bmp";
+function fileNameOf(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
 
-function isSupportedFile(file: File): boolean {
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  if (ext && VALID_EXTENSIONS.has(ext)) return true;
-  if (
-    file.type &&
-    (file.type === "image/jpeg" ||
-      file.type === "image/png" ||
-      file.type === "image/svg+xml" ||
-      file.type === "image/webp" ||
-      file.type === "image/avif" ||
-      file.type === "image/tiff" ||
-      file.type === "image/x-icon" ||
-      file.type === "image/vnd.microsoft.icon" ||
-      file.type === "image/bmp" ||
-      file.type === "image/x-ms-bmp")
-  ) {
-    return true;
-  }
-  return false;
+function isSupportedPath(path: string): boolean {
+  const name = fileNameOf(path);
+  const dotIndex = name.lastIndexOf(".");
+  if (dotIndex < 0) return false;
+  return VALID_EXTENSIONS.has(name.slice(dotIndex + 1).toLowerCase());
 }
 
 interface ImageItem {
   id: string;
-  file: File;
+  path: string;
+  name: string;
   url: string;
   dimensions: { width: number; height: number } | null;
   rotation: number;
 }
 
 export interface ConversionRequest {
-  images: { file: File; rotation: number }[];
+  images: { path: string; rotation: number }[];
   targetFormat: SupportedFormat;
   jpegQuality?: number;
   pngCompression?: "Fast" | "Balanced" | "Maximum";
@@ -84,16 +76,44 @@ export default function ImageConverter({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isWheelLockedRef = useRef(false);
   const wheelAccumulatorRef = useRef(0);
   const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imagesRef = useRef<ImageItem[]>([]);
+
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
 
   useEffect(() => {
     return () => {
-      images.forEach((item) => URL.revokeObjectURL(item.url));
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    getCurrentWebview()
+      .onDragDropEvent((event) => {
+        const payload = event.payload;
+        if (payload.type === "enter" || payload.type === "over") {
+          setIsDraggingOver(true);
+        } else if (payload.type === "leave") {
+          setIsDraggingOver(false);
+        } else if (payload.type === "drop") {
+          setIsDraggingOver(false);
+          addPaths(payload.paths);
+        }
+      })
+      .then((fn) => {
+        if (disposed) fn();
+        else unlisten = fn;
+      });
+    return () => {
+      disposed = true;
+      if (unlisten) unlisten();
     };
   }, []);
 
@@ -105,22 +125,21 @@ export default function ImageConverter({
     }, 6000);
   }
 
-  function addFiles(files: FileList | File[]) {
-    if (!files || files.length === 0) return;
-    const fileList = Array.from(files);
-    const supported: File[] = [];
-    const unsupported: File[] = [];
+  function addPaths(paths: string[]) {
+    if (!paths || paths.length === 0) return;
+    const supported: string[] = [];
+    const unsupported: string[] = [];
 
-    fileList.forEach((f) => {
-      if (isSupportedFile(f)) {
-        supported.push(f);
+    paths.forEach((p) => {
+      if (isSupportedPath(p)) {
+        supported.push(p);
       } else {
-        unsupported.push(f);
+        unsupported.push(p);
       }
     });
 
     if (unsupported.length > 0) {
-      const names = unsupported.map((f) => `"${f.name}"`).join(", ");
+      const names = unsupported.map((p) => `"${fileNameOf(p)}"`).join(", ");
       triggerError(
         `Unsupported file: ${names}. Supported files: JPEG, PNG, SVG, WebP, AVIF, TIFF, ICO, BMP.`
       );
@@ -129,12 +148,14 @@ export default function ImageConverter({
     if (supported.length === 0) return;
 
     const newItems: ImageItem[] = [];
-    supported.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      const id = `${file.name}-${file.lastModified}-${Math.random().toString(36).substring(2, 9)}`;
+    supported.forEach((path) => {
+      const name = fileNameOf(path);
+      const url = convertFileSrc(path);
+      const id = `${path}-${Math.random().toString(36).substring(2, 9)}`;
       const item: ImageItem = {
         id,
-        file,
+        path,
+        name,
         url,
         dimensions: null,
         rotation: 0,
@@ -158,8 +179,9 @@ export default function ImageConverter({
     if (newItems.length > 0) {
       setImages((prev) => [...prev, ...newItems]);
 
-      if (images.length === 0) {
-        const ext = newItems[0].file.name.split(".").pop()?.toLowerCase();
+      if (imagesRef.current.length === 0) {
+        const dotIndex = newItems[0].name.lastIndexOf(".");
+        const ext = dotIndex >= 0 ? newItems[0].name.slice(dotIndex + 1).toLowerCase() : "";
         if (ext === "png") setTargetFormat("jpeg");
         else if (ext === "jpg" || ext === "jpeg") setTargetFormat("png");
         else if (ext === "svg") setTargetFormat("png");
@@ -168,11 +190,20 @@ export default function ImageConverter({
     }
   }
 
-  function removeImage(indexToRemove: number) {
-    const itemToRemove = images[indexToRemove];
-    if (itemToRemove) {
-      URL.revokeObjectURL(itemToRemove.url);
+  async function browseFiles() {
+    try {
+      const selected = await open({
+        multiple: true,
+        filters: [{ name: "Images", extensions: [...VALID_EXTENSIONS] }],
+      });
+      if (!selected) return;
+      addPaths(Array.isArray(selected) ? selected : [selected]);
+    } catch {
+      triggerError("Could not open the file picker.");
     }
+  }
+
+  function removeImage(indexToRemove: number) {
     const nextImages = images.filter((_, idx) => idx !== indexToRemove);
     setImages(nextImages);
 
@@ -181,12 +212,8 @@ export default function ImageConverter({
   }
 
   function handleClearAll() {
-    images.forEach((it) => URL.revokeObjectURL(it.url));
     setImages([]);
     setCurrentIndex(0);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }
 
   function handleSetRotation(deg: number) {
@@ -252,7 +279,7 @@ export default function ImageConverter({
     if (images.length === 0 || isConverting) return;
     if (onConvert) {
       const error = await onConvert({
-        images: images.map((it) => ({ file: it.file, rotation: it.rotation })),
+        images: images.map((it) => ({ path: it.path, rotation: it.rotation })),
         targetFormat,
         ...(targetFormat === "jpeg" ? { jpegQuality } : {}),
         ...(targetFormat === "png" ? { pngCompression } : {}),
@@ -327,29 +354,8 @@ export default function ImageConverter({
           {images.length === 0 ? (
             <div
               className={`dropzone-area ${isDraggingOver ? "dragging-over" : ""}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDraggingOver(true);
-              }}
-              onDragLeave={() => setIsDraggingOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDraggingOver(false);
-                if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
-              }}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => browseFiles()}
             >
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                multiple
-                accept={FILE_ACCEPT_STRING}
-                onChange={(e) => {
-                  if (e.target.files) addFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
               <div className="dropzone-icon-circle">
                 <svg
                   width="38"
@@ -376,7 +382,7 @@ export default function ImageConverter({
                 className="dropzone-browse-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  fileInputRef.current?.click();
+                  browseFiles();
                 }}
               >
                 Browse Images
@@ -385,16 +391,6 @@ export default function ImageConverter({
           ) : (
             <div
               className={`preview-active-layout ${isDraggingOver ? "dragging-over" : ""}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDraggingOver(true);
-              }}
-              onDragLeave={() => setIsDraggingOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDraggingOver(false);
-                if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
-              }}
             >
               <div
                 className="picture-scroll-outer"
@@ -414,8 +410,8 @@ export default function ImageConverter({
                     <div className="picture-box" key={item.id}>
                       <div className="picture-box-tag">
                         <span className="picture-box-number">#{index + 1}</span>
-                        <span className="picture-box-name" title={item.file.name}>
-                          {item.file.name}
+                        <span className="picture-box-name" title={item.name}>
+                          {item.name}
                         </span>
                       </div>
                       <button
@@ -434,7 +430,7 @@ export default function ImageConverter({
                       </button>
                       <img
                         src={item.url}
-                        alt={item.file.name}
+                        alt={item.name}
                         className="preview-img-element"
                         style={{
                           transform: `rotate(${item.rotation}deg)`,
@@ -479,7 +475,7 @@ export default function ImageConverter({
                 <button
                   type="button"
                   className="add-more-pics-btn"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => browseFiles()}
                   title="Add more pictures"
                   aria-label="Add more pictures"
                 >
@@ -497,17 +493,6 @@ export default function ImageConverter({
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                 </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: "none" }}
-                  multiple
-                  accept={FILE_ACCEPT_STRING}
-                  onChange={(e) => {
-                    if (e.target.files) addFiles(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
               </div>
             </div>
           )}
