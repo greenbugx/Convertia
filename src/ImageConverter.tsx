@@ -62,7 +62,7 @@ export interface ConversionRequest {
 }
 
 interface ImageConverterProps {
-  onConvert?: (request: ConversionRequest) => void;
+  onConvert?: (request: ConversionRequest) => Promise<string | null>;
   isConverting?: boolean;
 }
 
@@ -242,15 +242,18 @@ export default function ImageConverter({
     }
   }
 
-  function handleConvert() {
+  async function handleConvert() {
     if (images.length === 0 || isConverting) return;
     if (onConvert) {
-      onConvert({
+      const error = await onConvert({
         images: images.map((it) => ({ file: it.file, rotation: it.rotation })),
         targetFormat,
         ...(targetFormat === "jpeg" ? { jpegQuality } : {}),
         ...(targetFormat === "png" ? { pngCompression } : {}),
       });
+      if (error) {
+        triggerError(error);
+      }
     }
   }
 

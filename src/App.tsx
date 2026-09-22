@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 import ImageConverter from "./ImageConverter";
+import type { ConversionRequest } from "./ImageConverter";
+import { convertImages } from "./convert";
 import logoSvg from "./assets/logo.svg";
 import convertiaSvg from "./assets/convertia.svg";
 
@@ -8,8 +10,20 @@ function App() {
   const [activeView, setActiveView] = useState<"home" | "image-to-image">("home");
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [extendedWidth, setExtendedWidth] = useState<number | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+
+  async function handleConvertImages(
+    request: ConversionRequest
+  ): Promise<string | null> {
+    setIsConverting(true);
+    try {
+      return await convertImages(request);
+    } finally {
+      setIsConverting(false);
+    }
+  }
 
   const [isToolsPopoverOpen, setIsToolsPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -309,7 +323,12 @@ function App() {
 
         {/* Main Content Area */}
         <main className={`main-viewport view-${activeView}`}>
-          {activeView === "image-to-image" && <ImageConverter />}
+          {activeView === "image-to-image" && (
+            <ImageConverter
+              onConvert={handleConvertImages}
+              isConverting={isConverting}
+            />
+          )}
         </main>
       </div>
     </div>
