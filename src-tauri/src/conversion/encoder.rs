@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::fs;
 use std::io::{Cursor, Seek, Write};
 use std::path::Path;
 
@@ -15,6 +14,7 @@ use image::{DynamicImage, ExtendedColorType, ImageEncoder, RgbImage};
 use super::error::ConversionError;
 use super::formats::ImageFormat;
 use super::options::{EncodeOptions, PngCompression};
+use super::output;
 
 const DEFAULT_JPEG_QUALITY: u8 = 85;
 const DEFAULT_AVIF_QUALITY: u8 = 85;
@@ -27,26 +27,9 @@ pub fn encode_to_path(
     format: ImageFormat,
     options: &EncodeOptions,
 ) -> Result<(), ConversionError> {
-    if path.as_os_str().is_empty() {
-        return Err(ConversionError::OutputPath(
-            "output path is empty".to_string(),
-        ));
-    }
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() && !parent.is_dir() {
-            return Err(ConversionError::OutputPath(format!(
-                "output directory does not exist: {}",
-                parent.display()
-            )));
-        }
-    }
+    output::validate_path(path)?;
     let file_data = encode_to_vec(image, format, options)?;
-    fs::write(path, &file_data).map_err(|e| {
-        ConversionError::OutputPath(format!(
-            "could not write output file {}: {e}",
-            path.display()
-        ))
-    })
+    output::write_file(path, &file_data)
 }
 
 pub fn encode_to_vec(
@@ -75,6 +58,9 @@ fn encode_to_writer<W: Write + Seek>(
             .map_err(encode_failed),
         ImageFormat::Ico => encode_ico(image, &mut writer),
         ImageFormat::Bmp => encode_bmp(image, &mut writer),
+        ImageFormat::Svg => Err(ConversionError::UnsupportedOutputFormat(
+            "SVG output is produced by the vectorizer, not the raster encoder".to_string(),
+        )),
     }
 }
 

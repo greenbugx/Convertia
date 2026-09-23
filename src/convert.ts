@@ -38,6 +38,21 @@ export async function convertImages(
         ...(request.avifSpeed !== undefined
           ? { avifSpeed: request.avifSpeed }
           : {}),
+        ...(request.svgPreset !== undefined
+          ? { svgPreset: request.svgPreset }
+          : {}),
+        ...(request.svgColorMode !== undefined
+          ? { svgColorMode: request.svgColorMode }
+          : {}),
+        ...(request.svgDetail !== undefined
+          ? { svgDetail: request.svgDetail }
+          : {}),
+        ...(request.svgSmoothness !== undefined
+          ? { svgSmoothness: request.svgSmoothness }
+          : {}),
+        ...(request.svgColorDetail !== undefined
+          ? { svgColorDetail: request.svgColorDetail }
+          : {}),
       },
     });
 

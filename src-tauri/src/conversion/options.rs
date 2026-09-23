@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::vectorizer_config::VectorizationOptions;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum PngCompression {
     Fast,
@@ -48,4 +50,5 @@ pub struct EncodeOptions {
 pub struct ConversionOptions {
     pub transform: TransformOptions,
     pub encode: EncodeOptions,
+    pub vectorize: VectorizationOptions,
 }

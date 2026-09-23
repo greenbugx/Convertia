@@ -8,6 +8,7 @@ pub enum ConversionError {
     UnsupportedOutputFormat(String),
     DecodeFailed(String),
     EncodeFailed(String),
+    VectorizeFailed(String),
     InvalidTransform(String),
     InvalidOptions(String),
     OutputPath(String),
@@ -27,6 +28,7 @@ impl fmt::Display for ConversionError {
             }
             Self::DecodeFailed(detail) => write!(f, "Could not decode the input image: {detail}"),
             Self::EncodeFailed(detail) => write!(f, "Could not encode the output image: {detail}"),
+            Self::VectorizeFailed(detail) => write!(f, "Could not vectorize the image: {detail}"),
             Self::InvalidTransform(detail) => write!(f, "Invalid transformation: {detail}"),
             Self::InvalidOptions(detail) => write!(f, "Invalid conversion options: {detail}"),
             Self::OutputPath(detail) => write!(f, "Invalid output path: {detail}"),

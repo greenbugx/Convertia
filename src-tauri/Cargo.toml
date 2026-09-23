@@ -36,6 +36,7 @@ webp = { version = "0.3.1", default-features = false }
 tauri-plugin-dialog = "2.7.3"
 percent-encoding = "2"
 resvg = "0.48.1"
+vtracer = "0.6.5"
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }

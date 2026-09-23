@@ -1269,6 +1269,58 @@ body,
   gap: 6px;
 }
 
+.svg-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.svg-colormode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.svg-chip {
+  padding: 8px 4px;
+  border: 1.5px solid #000000;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  box-sizing: border-box;
+  line-height: 1.15;
+}
+
+.svg-chip:hover {
+  background-color: #e4e4e6;
+}
+
+.svg-chip.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.slider-labels-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #666666;
+  padding: 0 2px;
+  margin-top: -2px;
+}
+
 .option-subdivider {
   height: 1px;
   background-color: #e5e5e7;
@@ -1580,7 +1632,8 @@ body,
 .theme-dark .rotate-chip,
 .theme-dark .format-chip,
 .theme-dark .quality-chip,
-.theme-dark .compression-chip {
+.theme-dark .compression-chip,
+.theme-dark .svg-chip {
   border-color: #ffffff;
   background-color: #24242c;
   color: #ffffff;
@@ -1589,16 +1642,22 @@ body,
 .theme-dark .rotate-chip:hover,
 .theme-dark .format-chip:hover,
 .theme-dark .quality-chip:hover,
-.theme-dark .compression-chip:hover {
+.theme-dark .compression-chip:hover,
+.theme-dark .svg-chip:hover {
   background-color: #353540;
 }
 
 .theme-dark .rotate-chip.active,
 .theme-dark .format-chip.active,
 .theme-dark .quality-chip.active,
-.theme-dark .compression-chip.active {
+.theme-dark .compression-chip.active,
+.theme-dark .svg-chip.active {
   background-color: #ffffff;
   color: #000000;
+}
+
+.theme-dark .slider-labels-row {
+  color: #a1a1aa;
 }
 
 .theme-dark .rotate-step-btn {

@@ -46,6 +46,9 @@ interface ImageItem {
   rotation: number;
 }
 
+export type SvgPreset = "Logo" | "Photo" | "Black and white" | "Poster";
+export type SvgColorMode = "Color" | "Black and white";
+
 export interface ConversionRequest {
   images: { path: string; rotation: number }[];
   targetFormat: SupportedFormat;
@@ -54,6 +57,11 @@ export interface ConversionRequest {
   webpQuality?: number;
   avifQuality?: number;
   avifSpeed?: number;
+  svgPreset?: SvgPreset;
+  svgColorMode?: SvgColorMode;
+  svgDetail?: number;
+  svgSmoothness?: number;
+  svgColorDetail?: number;
 }
 
 interface ImageConverterProps {
@@ -73,6 +81,11 @@ export default function ImageConverter({
   const [webpQuality, setWebpQuality] = useState(85);
   const [avifQuality, setAvifQuality] = useState(85);
   const [avifSpeed, setAvifSpeed] = useState(6);
+  const [svgPreset, setSvgPreset] = useState<SvgPreset>("Photo");
+  const [svgColorMode, setSvgColorMode] = useState<SvgColorMode>("Color");
+  const [svgDetail, setSvgDetail] = useState(60);
+  const [svgSmoothness, setSvgSmoothness] = useState(50);
+  const [svgColorDetail, setSvgColorDetail] = useState(60);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -307,6 +320,15 @@ export default function ImageConverter({
         ...(targetFormat === "png" ? { pngCompression } : {}),
         ...(targetFormat === "webp" ? { webpQuality } : {}),
         ...(targetFormat === "avif" ? { avifQuality, avifSpeed } : {}),
+        ...(targetFormat === "svg"
+          ? {
+              svgPreset,
+              svgColorMode,
+              svgDetail,
+              svgSmoothness,
+              ...(svgColorMode === "Color" ? { svgColorDetail } : {}),
+            }
+          : {}),
       });
       if (error) {
         triggerError(error);
@@ -651,6 +673,111 @@ export default function ImageConverter({
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {targetFormat === "svg" && (
+            <div className="option-group">
+              <div className="option-group-title-row">
+                <span className="option-group-title">Preset</span>
+              </div>
+              <div className="svg-presets-grid">
+                {(["Logo", "Photo", "Black and white", "Poster"] as const).map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`svg-chip ${svgPreset === preset ? "active" : ""}`}
+                    onClick={() => setSvgPreset(preset)}
+                  >
+                    {preset === "Black and white" ? "Black & White" : preset}
+                  </button>
+                ))}
+              </div>
+
+              <div className="option-subdivider" />
+
+              <div className="option-group-title-row">
+                <span className="option-group-title">Color Mode</span>
+              </div>
+              <div className="svg-colormode-grid">
+                {(["Color", "Black and white"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`svg-chip ${svgColorMode === mode ? "active" : ""}`}
+                    onClick={() => setSvgColorMode(mode)}
+                  >
+                    {mode === "Black and white" ? "Black & White" : mode}
+                  </button>
+                ))}
+              </div>
+
+              <div className="option-subdivider" />
+
+              <div className="option-group-title-row">
+                <span className="option-group-title">Detail</span>
+                <span className="option-badge">{svgDetail}%</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={svgDetail}
+                  onChange={(e) => setSvgDetail(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="slider-labels-row">
+                <span>Low</span>
+                <span>High</span>
+              </div>
+
+              <div className="option-subdivider" />
+
+              <div className="option-group-title-row">
+                <span className="option-group-title">Smoothness</span>
+                <span className="option-badge">{svgSmoothness}%</span>
+              </div>
+              <div className="quality-slider-container">
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={svgSmoothness}
+                  onChange={(e) => setSvgSmoothness(Number(e.target.value))}
+                  className="quality-slider"
+                />
+              </div>
+              <div className="slider-labels-row">
+                <span>Low</span>
+                <span>High</span>
+              </div>
+
+              {svgColorMode === "Color" && (
+                <>
+                  <div className="option-subdivider" />
+
+                  <div className="option-group-title-row">
+                    <span className="option-group-title">Color Detail</span>
+                    <span className="option-badge">{svgColorDetail}%</span>
+                  </div>
+                  <div className="quality-slider-container">
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={svgColorDetail}
+                      onChange={(e) => setSvgColorDetail(Number(e.target.value))}
+                      className="quality-slider"
+                    />
+                  </div>
+                  <div className="slider-labels-row">
+                    <span>Low</span>
+                    <span>High</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

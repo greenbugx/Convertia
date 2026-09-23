@@ -12,6 +12,7 @@ pub enum ImageFormat {
     Tiff,
     Ico,
     Bmp,
+    Svg,
 }
 
 impl ImageFormat {
@@ -28,6 +29,7 @@ impl ImageFormat {
             "tif" | "tiff" => Some(Self::Tiff),
             "ico" => Some(Self::Ico),
             "bmp" => Some(Self::Bmp),
+            "svg" => Some(Self::Svg),
             _ => None,
         }
     }
@@ -51,15 +53,16 @@ impl ImageFormat {
         }
     }
 
-    pub fn raster_format(self) -> RasterFormat {
+    pub fn raster_format(self) -> Option<RasterFormat> {
         match self {
-            Self::Jpeg => RasterFormat::Jpeg,
-            Self::Png => RasterFormat::Png,
-            Self::Webp => RasterFormat::WebP,
-            Self::Avif => RasterFormat::Avif,
-            Self::Tiff => RasterFormat::Tiff,
-            Self::Ico => RasterFormat::Ico,
-            Self::Bmp => RasterFormat::Bmp,
+            Self::Jpeg => Some(RasterFormat::Jpeg),
+            Self::Png => Some(RasterFormat::Png),
+            Self::Webp => Some(RasterFormat::WebP),
+            Self::Avif => Some(RasterFormat::Avif),
+            Self::Tiff => Some(RasterFormat::Tiff),
+            Self::Ico => Some(RasterFormat::Ico),
+            Self::Bmp => Some(RasterFormat::Bmp),
+            Self::Svg => None,
         }
     }
 
@@ -72,6 +75,7 @@ impl ImageFormat {
             Self::Tiff => "tiff",
             Self::Ico => "ico",
             Self::Bmp => "bmp",
+            Self::Svg => "svg",
         }
     }
 }

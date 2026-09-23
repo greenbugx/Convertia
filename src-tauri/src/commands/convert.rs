@@ -6,6 +6,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::conversion::{
     self, ConversionOptions, EncodeOptions, ImageFormat, PngCompression, TransformOptions,
+    VectorColorMode, VectorPreset, VectorizationOptions,
 };
 
 #[derive(Debug, Deserialize)]
@@ -26,6 +27,11 @@ pub struct ConvertImagesRequest {
     pub webp_quality: Option<u8>,
     pub avif_quality: Option<u8>,
     pub avif_speed: Option<u8>,
+    pub svg_preset: Option<VectorPreset>,
+    pub svg_color_mode: Option<VectorColorMode>,
+    pub svg_detail: Option<u8>,
+    pub svg_smoothness: Option<u8>,
+    pub svg_color_detail: Option<u8>,
 }
 
 #[derive(Debug, Serialize)]
@@ -81,12 +87,21 @@ pub fn convert_batch(
         avif_quality: request.avif_quality,
         avif_speed: request.avif_speed,
     };
+    let defaults = VectorizationOptions::default();
+    let vectorize = VectorizationOptions {
+        preset: request.svg_preset.unwrap_or(defaults.preset),
+        color_mode: request.svg_color_mode.unwrap_or(defaults.color_mode),
+        detail: request.svg_detail.unwrap_or(defaults.detail),
+        smoothness: request.svg_smoothness.unwrap_or(defaults.smoothness),
+        color_detail: request.svg_color_detail.or(defaults.color_detail),
+    };
     let mut results = Vec::with_capacity(request.images.len());
     for source in &request.images {
         results.push(convert_one(
             source,
             request.target_format,
             &encode,
+            &vectorize,
             output_directory,
         ));
     }
@@ -100,6 +115,7 @@ fn convert_one(
     source: &SourceImage,
     format: ImageFormat,
     encode: &EncodeOptions,
+    vectorize: &VectorizationOptions,
     output_directory: &Path,
 ) -> ImageConversionResult {
     let input_path = Path::new(&source.path);
@@ -116,6 +132,7 @@ fn convert_one(
             ..TransformOptions::default()
         },
         encode: encode.clone(),
+        vectorize: *vectorize,
     };
     match conversion::convert_image(input_path, &output_path, format, &options) {
         Ok(converted) => ImageConversionResult {

@@ -3,14 +3,18 @@ pub mod encoder;
 pub mod error;
 pub mod formats;
 pub mod options;
+pub mod output;
 pub mod svg;
 pub mod transformer;
+pub mod vectorizer;
+pub mod vectorizer_config;
 
 pub use error::ConversionError;
 pub use formats::{ImageFormat, InputFormat};
 pub use options::{
     ConversionOptions, CropOptions, EncodeOptions, PngCompression, ResizeOptions, TransformOptions,
 };
+pub use vectorizer_config::{VectorColorMode, VectorPreset, VectorizationOptions};
 
 use std::path::{Path, PathBuf};
 
@@ -30,7 +34,13 @@ pub fn convert_image(
     format: ImageFormat,
     options: &ConversionOptions,
 ) -> Result<ConvertedImage, ConversionError> {
-    let image = match InputFormat::from_path(input_path) {
+    let input_format = InputFormat::from_path(input_path);
+    if matches!(format, ImageFormat::Svg) && matches!(input_format, Some(InputFormat::Svg)) {
+        return Err(ConversionError::UnsupportedOutputFormat(
+            "SVG input cannot be converted to SVG output".to_string(),
+        ));
+    }
+    let image = match input_format {
         Some(InputFormat::Svg) => svg::decode_path(input_path, preferred_render_size(options))?,
         _ => decoder::decode_path(input_path)?.0,
     };
@@ -43,7 +53,13 @@ pub fn convert_bytes(
     format: ImageFormat,
     options: &ConversionOptions,
 ) -> Result<ConvertedImage, ConversionError> {
-    let image = if svg::looks_like_svg(data) {
+    let is_svg_input = svg::looks_like_svg(data);
+    if matches!(format, ImageFormat::Svg) && is_svg_input {
+        return Err(ConversionError::UnsupportedOutputFormat(
+            "SVG input cannot be converted to SVG output".to_string(),
+        ));
+    }
+    let image = if is_svg_input {
         svg::decode_bytes(data, preferred_render_size(options))?
     } else {
         decoder::decode_bytes(data)?.0
@@ -69,11 +85,18 @@ fn finish(
     options: &ConversionOptions,
 ) -> Result<ConvertedImage, ConversionError> {
     let transformed = transformer::apply(image, &options.transform)?;
-    encoder::encode_to_path(&transformed, output_path, format, &options.encode)?;
+    let width = transformed.width();
+    let height = transformed.height();
+    match format {
+        ImageFormat::Svg => {
+            vectorizer::vectorize_to_path(transformed, output_path, &options.vectorize)?
+        }
+        _ => encoder::encode_to_path(&transformed, output_path, format, &options.encode)?,
+    }
     Ok(ConvertedImage {
         output_path: output_path.to_path_buf(),
         format,
-        width: transformed.width(),
-        height: transformed.height(),
+        width,
+        height,
     })
 }
