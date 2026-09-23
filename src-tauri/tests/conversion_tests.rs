@@ -99,6 +99,7 @@ fn transform_options(build: impl FnOnce(&mut TransformOptions)) -> ConversionOpt
     ConversionOptions {
         transform,
         encode: EncodeOptions::default(),
+        vectorize: Default::default(),
     }
 }
 
@@ -375,18 +376,54 @@ fn extension_normalization_maps_equivalents() {
     assert_eq!(ImageFormat::from_extension("tif"), Some(ImageFormat::Tiff));
     assert_eq!(ImageFormat::from_extension("tiff"), Some(ImageFormat::Tiff));
     assert_eq!(ImageFormat::from_extension(".png"), Some(ImageFormat::Png));
-    assert_eq!(ImageFormat::from_extension("svg"), None);
+    assert_eq!(ImageFormat::from_extension("svg"), Some(ImageFormat::Svg));
     assert_eq!(ImageFormat::from_extension("gif"), None);
 }
 
 #[test]
-fn unsupported_svg_target_format_is_rejected() {
-    let result = serde_json::from_str::<ImageFormat>("\"svg\"");
-    assert!(result.is_err());
-    assert!(result
-        .err()
-        .map(|e| e.to_string().contains("unsupported image format"))
-        .unwrap_or(false));
+fn svg_output_format_is_accepted_for_raster_inputs() {
+    let format = serde_json::from_str::<ImageFormat>("\"svg\"");
+    assert_eq!(format.expect("svg output should parse"), ImageFormat::Svg);
+    assert_eq!(ImageFormat::Svg.extension(), "svg");
+}
+
+#[test]
+fn svg_input_to_svg_output_is_rejected() {
+    let dir = temp_dir();
+    let input = write_fixture(
+        &dir,
+        "in.png",
+        &DynamicImage::ImageRgb8(gradient_image(6, 4)),
+        image::ImageFormat::Png,
+    );
+    let output = dir.join("out.svg");
+    let result = convert_image(
+        &input,
+        &output,
+        ImageFormat::Svg,
+        &ConversionOptions::default(),
+    );
+    assert!(result.is_ok());
+    assert!(output.exists());
+
+    let svg_input = dir.join("input.svg");
+    fs::write(
+        &svg_input,
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>"##,
+    )
+    .expect("could not write svg fixture");
+    let svg_output = dir.join("again.svg");
+    let result = convert_image(
+        &svg_input,
+        &svg_output,
+        ImageFormat::Svg,
+        &ConversionOptions::default(),
+    );
+    assert!(matches!(
+        result,
+        Err(ConversionError::UnsupportedOutputFormat(_))
+    ));
+    assert!(!svg_output.exists());
 }
 
 #[test]
@@ -497,6 +534,7 @@ fn jpeg_quality_range_is_validated() {
             jpeg_quality: Some(0),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let result = convert_image(&input, &output, ImageFormat::Jpeg, &options);
     assert!(matches!(result, Err(ConversionError::InvalidOptions(_))));
@@ -524,6 +562,7 @@ fn png_compression_levels_all_encode() {
                 png_compression: Some(level),
                 ..EncodeOptions::default()
             },
+            vectorize: Default::default(),
         };
         let (format, _) = convert_and_reopen(&input, &output, ImageFormat::Png, &options);
         assert_eq!(format, image::ImageFormat::Png);
@@ -611,6 +650,7 @@ fn webp_lossy_quality_encodes() {
             webp_quality: Some(60),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let (format, image) = convert_and_reopen(&input, &output, ImageFormat::Webp, &options);
     assert_eq!(format, image::ImageFormat::WebP);
@@ -636,6 +676,7 @@ fn webp_lossy_preserves_alpha() {
             webp_quality: Some(80),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let (format, image) = convert_and_reopen(&input, &output, ImageFormat::Webp, &options);
     assert_eq!(format, image::ImageFormat::WebP);
@@ -659,6 +700,7 @@ fn webp_quality_range_is_validated() {
             webp_quality: Some(0),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let result = convert_image(&input, &output, ImageFormat::Webp, &options);
     assert!(matches!(result, Err(ConversionError::InvalidOptions(_))));
@@ -703,6 +745,7 @@ fn avif_custom_quality_and_speed_encode() {
             avif_speed: Some(8),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let (format, image) = convert_and_reopen(&input, &output, ImageFormat::Avif, &options);
     assert_eq!(format, image::ImageFormat::Avif);
@@ -725,6 +768,7 @@ fn avif_quality_range_is_validated() {
             avif_quality: Some(0),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let result = convert_image(&input, &output, ImageFormat::Avif, &options);
     assert!(matches!(result, Err(ConversionError::InvalidOptions(_))));
@@ -747,6 +791,7 @@ fn avif_speed_range_is_validated() {
             avif_speed: Some(11),
             ..EncodeOptions::default()
         },
+        vectorize: Default::default(),
     };
     let result = convert_image(&input, &output, ImageFormat::Avif, &options);
     assert!(matches!(result, Err(ConversionError::InvalidOptions(_))));
@@ -795,6 +840,11 @@ fn batch_conversion_with_paths() {
         webp_quality: Some(75),
         avif_quality: None,
         avif_speed: None,
+        svg_preset: None,
+        svg_color_mode: None,
+        svg_detail: None,
+        svg_smoothness: None,
+        svg_color_detail: None,
     };
 
     let response = convert_batch(&request, &output_dir);

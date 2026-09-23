@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use convertia_lib::conversion::{
-    convert_bytes, convert_image, ConversionOptions, CropOptions, ImageFormat, ResizeOptions,
-    TransformOptions,
+    convert_bytes, convert_image, ConversionError, ConversionOptions, CropOptions, ImageFormat,
+    InputFormat, ResizeOptions, TransformOptions,
 };
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgb, RgbImage};
 
@@ -389,15 +389,28 @@ fn svg_output_path_failure_is_reported() {
 }
 
 #[test]
-fn raster_to_svg_output_stays_unsupported() {
-    assert_eq!(ImageFormat::from_extension("svg"), None);
+fn svg_input_to_svg_output_stays_unsupported() {
+    assert_eq!(ImageFormat::from_extension("svg"), Some(ImageFormat::Svg));
     let dir = temp_dir();
     let input = write_svg(&dir, "input.svg", SVG_RED_RECT);
-    assert_eq!(ImageFormat::from_path(&input), None);
-    let output = dir.join("out.png");
+    assert_eq!(InputFormat::from_path(&input), Some(InputFormat::Svg));
+    let output = dir.join("out.svg");
     let result = convert_image(
         &input,
         &output,
+        ImageFormat::Svg,
+        &ConversionOptions::default(),
+    );
+    assert!(matches!(
+        result,
+        Err(ConversionError::UnsupportedOutputFormat(_))
+    ));
+    assert!(!output.exists());
+
+    let raster_output = dir.join("out.png");
+    let result = convert_image(
+        &input,
+        &raster_output,
         ImageFormat::Png,
         &ConversionOptions::default(),
     );
