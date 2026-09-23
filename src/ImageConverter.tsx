@@ -95,22 +95,25 @@ export default function ImageConverter({
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    getCurrentWebview()
-      .onDragDropEvent((event) => {
-        const payload = event.payload;
-        if (payload.type === "enter" || payload.type === "over") {
-          setIsDraggingOver(true);
-        } else if (payload.type === "leave") {
-          setIsDraggingOver(false);
-        } else if (payload.type === "drop") {
-          setIsDraggingOver(false);
-          void addPaths(payload.paths);
-        }
-      })
-      .then((fn) => {
-        if (disposed) fn();
-        else unlisten = fn;
-      });
+    try {
+      getCurrentWebview()
+        .onDragDropEvent((event) => {
+          const payload = event.payload;
+          if (payload.type === "enter" || payload.type === "over") {
+            setIsDraggingOver(true);
+          } else if (payload.type === "leave") {
+            setIsDraggingOver(false);
+          } else if (payload.type === "drop") {
+            setIsDraggingOver(false);
+            void addPaths(payload.paths);
+          }
+        })
+        .then((fn) => {
+          if (disposed) fn();
+          else unlisten = fn;
+        })
+        .catch(() => {});
+    } catch {}
     return () => {
       disposed = true;
       if (unlisten) unlisten();
