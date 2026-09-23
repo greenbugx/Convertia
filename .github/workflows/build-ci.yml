@@ -23,10 +23,11 @@ jobs:
         run: |
           SHA="${{ github.event.workflow_run.head_sha }}"
           EVENT="${{ github.event.workflow_run.event }}"
+          REPO="${{ github.repository }}"
           for wf in backend-ci frontend-ci; do
             conclusion=""
             for i in $(seq 1 100); do
-              response=$(gh api "actions/workflows/$wf.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\")] | sort_by(.created_at) | last | .conclusion // \"\"" 2>/dev/null || true)
+              response=$(gh api "repos/$REPO/actions/workflows/$wf.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\")] | sort_by(.created_at) | last | .conclusion // \"\"" 2>/dev/null || true)
               conclusion="$response"
               if [ -n "$conclusion" ]; then
                 if [ "$conclusion" = "success" ]; then
@@ -44,7 +45,7 @@ jobs:
             fi
           done
 
-          sibling=$(gh api "actions/workflows/build-ci.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\" and .id != ${{ github.run_id }})] | sort_by(.created_at) | last | .conclusion // \"\"" 2>/dev/null || true)
+          sibling=$(gh api "repos/$REPO/actions/workflows/build-ci.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\" and .id != ${{ github.run_id }})] | sort_by(.created_at) | last | .conclusion // \"\"" 2>/dev/null || true)
           if [ -n "$sibling" ]; then
             if [ "$sibling" = "success" ]; then
               echo "build already completed successfully for this commit"
