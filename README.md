@@ -71,7 +71,11 @@ The suite covers format roundtrips, transformations, error handling, EXIF orient
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `pnpm tauri build` on every push and pull request that touches code, configuration, or dependencies. Documentation only changes skip the workflow.
+`.github/workflows` contains three workflows that share the same ignore list, so documentation only changes trigger nothing:
+
+- `backend-ci` runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and `cargo test` on the Rust side only
+- `frontend-ci` runs the TypeScript type check (`tsc --noEmit`) and a Vite bundle of the web interface
+- `build-ci` starts after `backend-ci` and `frontend-ci` finish. It waits for both to complete for the same commit, requires both to be green, and then performs the full `pnpm tauri build` release build as the final gate. A red check on either side blocks the build.
 
 ## Contributing
 

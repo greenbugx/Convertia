@@ -1,0 +1,97 @@
+name: build-ci
+
+on:
+  workflow_run:
+    workflows: [backend-ci, frontend-ci]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: build-ci-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for both checks to pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          EVENT="${{ github.event.workflow_run.event }}"
+          for wf in backend-ci frontend-ci; do
+            conclusion=""
+            for i in $(seq 1 100); do
+              conclusion=$(gh api "actions/workflows/$wf.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\")] | sort_by(.created_at) | last | .conclusion // \"\"")
+              if [ -n "$conclusion" ]; then
+                if [ "$conclusion" = "success" ]; then
+                  echo "$wf succeeded"
+                  break
+                fi
+                echo "$wf concluded: $conclusion"
+                exit 1
+              fi
+              sleep 6
+            done
+            if [ -z "$conclusion" ]; then
+              echo "$wf did not complete in time"
+              exit 1
+            fi
+          done
+
+          sibling=$(gh api "actions/workflows/build-ci.yml/runs?head_sha=$SHA&per_page=20" --jq "[.workflow_runs[] | select(.event == \"$EVENT\" and .id != ${{ github.run_id }})] | sort_by(.created_at) | last | .conclusion // \"\"")
+          if [ -n "$sibling" ]; then
+            if [ "$sibling" = "success" ]; then
+              echo "build already completed successfully for this commit"
+              exit 0
+            fi
+            echo "earlier build concluded: $sibling"
+            exit 1
+          fi
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            libdav1d-dev \
+            libdbus-1-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: tauri build
+        run: pnpm tauri build

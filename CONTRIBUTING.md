@@ -75,11 +75,21 @@ test: add tests for something
 
 Keep the subject line short and specific.
 
+## Continuous integration
+
+CI is split into three workflows in `.github/workflows`, all sharing the same ignore list, so documentation only changes trigger nothing:
+
+- `backend-ci` runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and `cargo test` on the Rust side only
+- `frontend-ci` runs the TypeScript type check (`tsc --noEmit`) and a Vite bundle of the web interface
+- `build-ci` runs only after both check workflows have completed for the same commit. It verifies both are green, then performs the full `pnpm tauri build` release build as the final gate. A red check on either side blocks the build.
+
+All three must be green before merge.
+
 ## Pull requests
 
 - Branch from `main` and keep changes focused, one concern per pull request
 - Update [SUPPORTED.md](SUPPORTED.md) and [UNSUPPORTED.md](UNSUPPORTED.md) when behavior changes
-- CI runs `cargo fmt`, clippy with warnings denied, the test suite, and a release build. It must be green before merge
+- CI runs three workflows: `backend-ci` (fmt, clippy, tests), `frontend-ci` (TypeScript check and bundle), and `build-ci` (release build after both are green). All must be green before merge
 - Describe what changed and how it was tested
 
 ## Reporting bugs

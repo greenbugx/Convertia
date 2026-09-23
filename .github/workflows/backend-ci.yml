@@ -1,4 +1,4 @@
-name: CI
+name: backend-ci
 
 on:
   push:
@@ -33,13 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -62,9 +55,6 @@ jobs:
             libssl-dev \
             libxdo-dev
 
-      - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: cargo fmt
         working-directory: src-tauri
         run: cargo fmt --check
@@ -76,6 +66,3 @@ jobs:
       - name: cargo test
         working-directory: src-tauri
         run: cargo test
-
-      - name: tauri build
-        run: pnpm tauri build
