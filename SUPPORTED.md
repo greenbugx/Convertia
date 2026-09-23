@@ -26,8 +26,9 @@ Equivalent extensions are normalized internally: `jpg` and `jpeg` map to `JPEG`,
 - TIFF (`.tiff`)
 - ICO (`.ico`)
 - BMP (`.bmp`)
+- SVG (`.svg`)
 
-All supported conversions: every input format above converts to every output format above.
+Every raster input converts to every output format, including traced `SVG`. `SVG` input converts to every raster output. `SVG` to `SVG` is not supported.
 
 ### Transformations
 
@@ -60,6 +61,25 @@ The backend core also implements horizontal flip, vertical flip, crop, and resiz
 - Relative local resources, such as linked images in the same folder, resolve against the SVG file's directory
 - Text renders with fonts available to the system font database
 
+### Raster to SVG vectorization
+
+Raster inputs are traced into `SVG` with VTracer `0.6.5`, producing real vector paths. The trace runs on the already decoded and already transformed image, so EXIF normalization and per image rotation apply before tracing, and no file is decoded twice.
+
+Options exposed in the interface:
+
+- Preset: `Logo`, `Photo`, `Black & White`, `Poster`. `Photo`, `Black & White`, and `Poster` use VTracer's built in baselines. `Logo` is a Convertia specific configuration derived from the Poster baseline for cleaner compact paths.
+- Color mode: `Color` or `Black & White`. The user's choice always overrides the mode the preset would otherwise apply.
+- Detail: `1` to `100`. Low discards more tiny regions and simplifies geometry for smaller output. High preserves more regions and geometry for larger output.
+- Smoothness: `1` to `100`. Low keeps sharper corners and more local structure. High produces rounder curves with fewer sharp transitions.
+- Color detail: `1` to `100`, visible only in Color mode. Low merges colors into fewer layers. High preserves more color layers. It is ignored completely in Black & White mode.
+- VTracer's raw fields, including hierarchical mode, curve fitting mode, speckle filter, color precision, layer difference, thresholds, and path precision, stay internal and are never sent from the interface.
+
+Notes on traced output:
+
+- Tracing is an approximation of the source raster. Original vector structure, layers, or text are never recovered.
+- Fully transparent pixels are keyed and dropped the way VTracer documents it, so transparent regions stay unpainted instead of becoming a per pixel opacity layer.
+- Presets that already sit at VTracer's maximum color precision see the top of the Color detail slider converge on that maximum, because VTracer supports at most 8 significant bits per channel.
+
 ## Application behavior
 
 - Native file picker and drag and drop
@@ -80,5 +100,5 @@ The backend core also implements horizontal flip, vertical flip, crop, and resiz
 
 ## Quality gates
 
-- 86 backend tests: format roundtrips, transformations, error cases, EXIF orientation, `SVG` rendering, and preview access grants
+- 122 backend tests: format roundtrips, transformations, error cases, EXIF orientation, `SVG` rendering, raster to `SVG` tracing, vectorization option mapping, and preview access grants
 - Continuous integration runs `cargo fmt`, `cargo clippy` with warnings denied, the full test suite, and a release build on every code change

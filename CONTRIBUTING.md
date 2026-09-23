@@ -8,7 +8,7 @@ Convertia is a local, offline conversion toolkit. Contributions must keep these 
 
 - No network requests, no uploads, no telemetry, no remote processing
 - Source files are never modified or overwritten
-- No `SVG` output, `PDF`, documents, OCR, audio, or video unless it is an agreed direction described in [UNSUPPORTED.md](UNSUPPORTED.md)
+- No `PDF`, documents, OCR, audio, or video unless it is an agreed direction described in [UNSUPPORTED.md](UNSUPPORTED.md)
 - New features start in the frontend contract and the backend follows it, not the other way around
 
 Before building something large, open an issue describing the change so scope can be agreed first.
@@ -48,6 +48,7 @@ General:
 - Backend changes need tests in `src-tauri/tests`
 - Tests must run without the Tauri window, using generated or fixture data only
 - New formats and new transformations need roundtrip and error case coverage
+- Vectorization changes need config mapping coverage for presets, sliders, and color mode overrides, plus a roundtrip that asserts the output contains vector paths and no embedded raster
 - Run the suite before pushing:
 
 ```

@@ -35,11 +35,29 @@ Status: Planned
 
 ## Image format gaps
 
-### Raster to SVG output
+### SVG to SVG
 
-Converting JPEG, PNG, WebP, AVIF, TIFF, ICO, or BMP to SVG is explicitly out of scope. SVG exists only on the input side.
+An `SVG` input cannot be re-traced into a new `SVG`. `SVG` input converts to every raster output, and raster input converts to `SVG`, but the combination is rejected with a clear error.
 
-Status: Planned
+Status: Not planned
+
+### Recovering original vector structure from a raster
+
+Tracing always produces an approximation of the source raster. Original paths, layers, or text from a hand authored vector file are never recovered once it has been rasterized.
+
+Status: Not planned and not achievable by any tracer
+
+### Partial opacity in traced SVG output
+
+VTracer keys fully transparent pixels instead of encoding per pixel opacity, so traced `SVG` contains opaque paths over unpainted transparent regions rather than partial alpha layers.
+
+Status: Not planned, follows the VTracer design
+
+### Raw VTracer controls in the interface
+
+Hierarchical mode, curve fitting mode, speckle filter, color precision, layer difference, corner and splice thresholds, and path precision remain internal implementation details. The interface stays at the preset and slider abstraction on purpose.
+
+Status: Likely
 
 ### SVGZ files (.svgz)
 
