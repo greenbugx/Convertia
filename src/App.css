@@ -438,7 +438,8 @@ body,
   padding-top: 160px;
 }
 
-.main-viewport.view-image-to-image {
+.main-viewport.view-image-to-image,
+.main-viewport.view-image-to-pdf {
   padding-top: 92px;
   padding-bottom: 6px;
   padding-left: 2px;
@@ -1327,6 +1328,258 @@ body,
   margin: 2px 0;
 }
 
+.pdf-converter-container {
+  transition: gap 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdf-converter-container.pdf-empty-mode {
+  gap: 0;
+}
+
+.pdf-converter-container.pdf-active-mode {
+  gap: 14px;
+}
+
+.pdf-preview-card {
+  transition: flex 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdf-options-card {
+  transition: flex 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease,
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+  will-change: flex, max-width, opacity, transform;
+}
+
+.pdf-options-card.collapsed {
+  flex: 0 0 0px;
+  max-width: 0;
+  opacity: 0;
+  border-width: 0;
+  border-color: transparent;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translateX(30px);
+}
+
+.pdf-options-card.expanded {
+  flex: 1 1 0px;
+  max-width: 100%;
+  opacity: 1;
+  border-width: 2px;
+  border-color: #000000;
+  pointer-events: auto;
+  overflow: hidden;
+  transform: translateX(0);
+}
+
+.pdf-options-card .converter-card-header,
+.pdf-options-card .options-card-body {
+  min-width: 320px;
+}
+
+.pdf-options-card .options-card-body {
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.pdf-options-card .option-group {
+  padding: 8px 10px;
+}
+
+.pdf-orientation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.pdf-margins-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.pdf-format-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.resolution-presets-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.pdf-range-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pdf-range-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.pdf-range-field-label {
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111111;
+  white-space: nowrap;
+}
+
+.pdf-range-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1.5px solid #000000;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.pdf-range-input:focus {
+  border-color: #000000;
+  background-color: #ffffff;
+}
+
+.pdf-range-to-sep {
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #666666;
+}
+
+.pdf-chip {
+  padding: 8px 6px;
+  border: 1.5px solid #000000;
+  border-radius: 8px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-chip:hover {
+  background-color: #e4e4e6;
+}
+
+.pdf-chip.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.pdf-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.pdf-select-dropdown {
+  width: 100%;
+  padding: 9px 36px 9px 12px;
+  border: 1.5px solid #000000;
+  border-radius: 10px;
+  background-color: #f7f7f8;
+  color: #111111;
+  font-family: "Clarendon", Georgia, "Times New Roman", serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: all 0.15s ease;
+}
+
+.pdf-select-dropdown:hover {
+  background-color: #e4e4e6;
+}
+
+.pdf-select-dropdown:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-select-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  stroke: #111111;
+}
+
+.pdf-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.pdf-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+  width: 0;
+  height: 0;
+}
+
+.pdf-custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #000000;
+  border-radius: 5px;
+  background-color: #f7f7f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pdf-checkbox-label:hover .pdf-custom-checkbox {
+  background-color: #e4e4e6;
+}
+
+.pdf-custom-checkbox.checked {
+  background-color: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+.pdf-checkbox-text {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #111111;
+}
+
 /* Convert Button */
 .convert-action-section {
   margin-top: auto;
@@ -1723,6 +1976,91 @@ body,
 
 .theme-dark .sidebar-content::-webkit-scrollbar-thumb {
   background: #3f3f46;
+}
+
+.theme-dark .pdf-chip {
+  border-color: #ffffff;
+  background-color: #24242c;
+  color: #ffffff;
+}
+
+.theme-dark .pdf-chip:hover {
+  background-color: #2e2e38;
+}
+
+.theme-dark .pdf-chip.active {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.theme-dark .pdf-select-dropdown {
+  border-color: #ffffff;
+  background-color: #24242c;
+  color: #ffffff;
+}
+
+.theme-dark .pdf-select-dropdown:hover {
+  background-color: #2e2e38;
+}
+
+.theme-dark .pdf-select-dropdown:focus {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+.theme-dark .pdf-select-dropdown option {
+  background-color: #24242c;
+  color: #ffffff;
+}
+
+.theme-dark .pdf-select-arrow {
+  stroke: #ffffff;
+}
+
+.theme-dark .pdf-custom-checkbox {
+  border-color: #ffffff;
+  background-color: #24242c;
+}
+
+.theme-dark .pdf-checkbox-label:hover .pdf-custom-checkbox {
+  background-color: #2e2e38;
+}
+
+.theme-dark .pdf-custom-checkbox.checked {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+}
+
+.theme-dark .pdf-checkbox-text {
+  color: #ffffff;
+}
+
+.theme-dark .pdf-options-card.collapsed {
+  border-color: transparent;
+}
+
+.theme-dark .pdf-options-card.expanded {
+  border-color: #ffffff;
+}
+
+.theme-dark .pdf-range-field-label {
+  color: #ffffff;
+}
+
+.theme-dark .pdf-range-input {
+  border-color: #ffffff;
+  background-color: #24242c;
+  color: #ffffff;
+}
+
+.theme-dark .pdf-range-input:focus {
+  border-color: #ffffff;
+  background-color: #1e1e24;
+}
+
+.theme-dark .pdf-range-to-sep {
+  color: #a1a1aa;
 }
 
 ::view-transition-old(root),

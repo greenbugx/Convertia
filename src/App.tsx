@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { flushSync } from "react-dom";
 import "./App.css";
 import ImageConverter from "./ImageConverter";
+import ImageToPdfConverter from "./ImageToPdfConverter";
 import type { ConversionRequest } from "./ImageConverter";
 import { convertImages } from "./convert";
 import logoSvg from "./assets/logo.svg";
@@ -9,7 +10,7 @@ import logoDarkSvg from "./assets/logo_dark.svg";
 import convertiaSvg from "./assets/convertia.svg";
 
 function App() {
-  const [activeView, setActiveView] = useState<"home" | "image-to-image">("home");
+  const [activeView, setActiveView] = useState<"home" | "image-to-image" | "image-to-pdf">("home");
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [extendedWidth, setExtendedWidth] = useState<number | null>(null);
   const [isConverting, setIsConverting] = useState(false);
@@ -358,6 +359,52 @@ function App() {
                       <span>Image</span>
                     </span>
                   </button>
+                  <button
+                    className={`tool-item ${activeView === "image-to-pdf" ? "active" : ""}`}
+                    type="button"
+                    onClick={() => {
+                      setActiveView("image-to-pdf");
+                      setIsToolsPopoverOpen(false);
+                    }}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="tool-icon"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <line x1="10" y1="9" x2="8" y2="9" />
+                    </svg>
+                    <span className="tool-label">
+                      <span>Image</span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="bidirectional-arrow"
+                        aria-hidden="true"
+                      >
+                        <line x1="4" y1="12" x2="20" y2="12" />
+                        <polyline points="8 8 4 12 8 16" />
+                        <polyline points="16 8 20 12 16 16" />
+                      </svg>
+                      <span>PDF</span>
+                    </span>
+                  </button>
                 </div>
               )}
             </div>
@@ -450,6 +497,51 @@ function App() {
                     <span>Image</span>
                   </span>
                 </button>
+                <button
+                  className={`tool-item ${activeView === "image-to-pdf" ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setActiveView("image-to-pdf");
+                  }}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="tool-icon"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <line x1="10" y1="9" x2="8" y2="9" />
+                  </svg>
+                  <span className="tool-label">
+                    <span>Image</span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="bidirectional-arrow"
+                      aria-hidden="true"
+                    >
+                      <line x1="4" y1="12" x2="20" y2="12" />
+                      <polyline points="8 8 4 12 8 16" />
+                      <polyline points="16 8 20 12 16 16" />
+                    </svg>
+                    <span>PDF</span>
+                  </span>
+                </button>
               </div>
 
               <div className="sidebar-extended-footer">
@@ -501,6 +593,9 @@ function App() {
               onConvert={handleConvertImages}
               isConverting={isConverting}
             />
+          )}
+          {activeView === "image-to-pdf" && (
+            <ImageToPdfConverter isConverting={isConverting} />
           )}
         </main>
       </div>
